@@ -5,8 +5,8 @@ p.s. Apologies for misspelling the name of the OS in the title of the project.
 
 ## Steps To Verify
 - [x] Write basic description
-- [ ] Build minimum code showing the behavior
-- [ ] Write a method to follow to test behaviour
+- [x] Build minimum code showing the behavior
+- [x] Write a method to follow to test behaviour
 - [ ] Verify bahavior on differnt kernels
 - [ ] Check if the potential bug has already been reported.
 - [ ] Complete the detailed description of the issue
@@ -17,11 +17,107 @@ p.s. Apologies for misspelling the name of the OS in the title of the project.
 - On serial code compiled for purecap mode and run on purecap kernel: `read()` returns `EFAULT` for a short period after USB to serial device is connected.
 - Comiling for hybrid mode doesn't exhibit this behaviour.
 
+## Method
+- Use `build` to create a hybrid build (`test_hy`) and a purecap build (`test_pc`).
+- Plug in a USB to Serial device that is connected to a serial data source (in our example a GNSS device).
+- Execute `.\test_hy`. It take a couple of attempts to align with the end of lines but then it will begin to display the NMEA sentances. We can ignore the EAGAIN error as that is just there because our code is non-blocking and `The file was marked for	non-blocking I/O, and no data were ready to be read.`:
+```
+root@cheribsd:~/github/CherryBSD_USB_Serial_Issue # ./test_hy
+Opening port /dev/ttyU0
+Buad rate set to 9600bps.
+Creating Event Queue...
+Entering Main Loop...
+serialFd = 3
+Serial data! Bytes waiting: 762
+buffer: ▒
 
-## Stage 1 - Create Some Simplified Test Code to Show the Issue
-1. We are currently running a test build of the kernel built (note to self: only tag kernel author once bug is confirmed) to fix this issue: https://github.com/CTSRD-CHERI/cheribsd/issues/1616
-2. Version tested with:
-`
+Read error! nbytes = -1 errno = 35 (EAGAIN or EWOULDBLOCK)
+Serial data! Bytes waiting: 41
+buffer: ▒▒▒jR▒$GPTXT,01,01,02,ANTSTATUS=OPEN*2B
+
+Read error! nbytes = -1 errno = 35 (EAGAIN or EWOULDBLOCK)
+Serial data! Bytes waiting: 77
+buffer: $GNRMC,104851.000,A,5249.750190,N,00206.543755,W,1.32,12.62,050223,,,A,V*21
+
+Read error! nbytes = -1 errno = 35 (EAGAIN or EWOULDBLOCK)
+Serial data! Bytes waiting: 38
+buffer: $GNVTG,12.62,T,,M,1.32,N,2.44,K,A*16
+```
+- Now disconnect the USB to Serial device (Note that we don't get a error for this, it just stops working. You would think it would return something to indicate that the pipe is closed but it doesn't).
+- Now execute `.\test_pc` and swe get quite a different response.
+```
+root@cheribsd:~/github/CherryBSD_USB_Serial_Issue # ./test_pc
+Opening port /dev/ttyU0
+Buad rate set to 9600bps.
+Creating Event Queue...
+Entering Main Loop...
+serialFd = 3
+Serial data! Bytes waiting: 332
+Read error! nbytes = -1 errno = 14 (EFAULT)
+Serial data! Bytes waiting: 76
+Read error! nbytes = -1 errno = 14 (EFAULT)
+Serial data! Bytes waiting: 75
+Read error! nbytes = -1 errno = 14 (EFAULT)
+Serial data! Bytes waiting: 74
+Read error! nbytes = -1 errno = 14 (EFAULT)
+Serial data! Bytes waiting: 289
+Read error! nbytes = -1 errno = 14 (EFAULT)
+Serial data! Bytes waiting: 237
+Read error! nbytes = -1 errno = 14 (EFAULT)
+Serial data! Bytes waiting: 173
+Read error! nbytes = -1 errno = 14 (EFAULT)
+Serial data! Bytes waiting: 109
+Read error! nbytes = -1 errno = 14 (EFAULT)
+Serial data! Bytes waiting: 104
+Read error! nbytes = -1 errno = 14 (EFAULT)
+```
+- Press `Ctrl-C` to exit and then execute `.\test_pc` again. It will work like the hybrid version:
+```
+root@cheribsd:~/github/CherryBSD_USB_Serial_Issue # ./test_pc
+Opening port /dev/ttyU0
+Buad rate set to 9600bps.
+Creating Event Queue...
+Entering Main Loop...
+serialFd = 3
+Serial data! Bytes waiting: 257
+buffer: $GPTXT,01,01,02,ANTSTATUS=OPEN*2B
+
+buffer: $GNRMC,110429.000,A,5249.749311,N,00206.547166,W,0.00,206.08,050223,,,A,V*1D
+
+buffer: $GNVTG,206.08,T,,M,0.00,N,0.00,K,A*2F
+
+buffer: $GNGGA,110429.000,5249.749311,N,00206.547166,W,1,8,1.32,71.046,M,48.332,M,,*6D
+
+buffer: $GNGSA,A,3,12,23,13,24,2
+
+Read error! nbytes = -1 errno = 35 (EAGAIN or EWOULDBLOCK)
+Serial data! Bytes waiting: 35
+buffer: $GPTXT,01,01,02,ANTSTATUS=OPEN*2B
+
+Read error! nbytes = -1 errno = 35 (EAGAIN or EWOULDBLOCK)
+Serial data! Bytes waiting: 78
+buffer: $GNRMC,110431.000,A,5249.749311,N,00206.547166,W,0.00,206.08,050223,,,A,V*14
+
+Read error! nbytes = -1 errno = 35 (EAGAIN or EWOULDBLOCK)
+```
+- You can play with the timing a little bit. For example: If you wait 10 seconds after plugging in your serial device the purecap build will work correctly. It opnly appears to go wrong if you attempt to read immediately after plugging in the USB to Serial device.
+
+## What Does It Mean?
+Consulting the documentation [here](https://man.freebsd.org/cgi/man.cgi?sektion=2&query=read) informs us of the follwing:
+```
+[EFAULT]		The buf	argument points	outside	the allocated address space.
+```
+Obviously, we're not actually doing this as the same code works after a short period of time and works on hybrid builds.
+
+## Verify bahavior on differnt kernels
+### Our Default Kernel
+We are currently running a test build of the kernel built (note to self: only tag kernel author once bug is confirmed) to fix this issue: https://github.com/CTSRD-CHERI/cheribsd/issues/1616
+Version tested with:
+```
 root@cheribsd:~/github # uname -a
 FreeBSD cheribsd.local 14.0-CURRENT FreeBSD 14.0-CURRENT #0 ugen-ep-copyincap-n256372-c708375e636: Mon Jan  9 16:16:12 GMT 2023     jrtc4@technos.cl.cam.ac.uk:/local/scratch/jrtc4/libusb-cheribuild-root/build/cheribsd-morello-purecap-build/local/scratch/jrtc4/libusb-cheribuild-root/cheribsd/arm64.aarch64c/sys/GENERIC-MORELLO arm64
-`
+```
+Effect observed: Yes
+
+### Default V Purecaps Kernel
+### Default V Hybrid Kernel
