@@ -29,10 +29,10 @@ size_t processSerial(int fd)
 {
   static char buffer[255]; // input buffer
   static char *pbuffer = buffer;  // current place in buffer
-  int nbytes;  // bytes read so far
+  int nbytes = 0;  // bytes read so far
   size_t size = 0;
 
-  if ((nbytes = read(fd, pbuffer, sizeof(buffer) - (buffer - pbuffer) - 1)) > 0)
+  while((nbytes = read(fd, pbuffer, sizeof(buffer) - (buffer - pbuffer) - 1)) > 0)
   {
     pbuffer += nbytes;
     //printf("We read %i bytes this time.\n", nbytes);
@@ -54,7 +54,7 @@ size_t processSerial(int fd)
       //break;
     }
   }
-  else if(nbytes == 0)
+  if(nbytes == 0)
   {
     printf("Waste! nbytes = %i\n", nbytes);
   }
