@@ -7,7 +7,7 @@ p.s. Apologies for misspelling the name of the OS in the title of the project.
 - [x] Write basic description
 - [x] Build minimum code showing the behavior
 - [x] Write a method to follow to test behaviour
-- [ ] Verify bahavior on differnt kernels
+- [x] Verify bahavior on differnt kernels
 - [ ] Check if the potential bug has already been reported.
 - [ ] Complete the detailed description of the issue
 - [ ] Post on Slack and see if anyone else has been this bahvior
@@ -15,7 +15,7 @@ p.s. Apologies for misspelling the name of the OS in the title of the project.
 
 ## Description
 - On serial code compiled for purecap mode and run on purecap kernel: `read()` returns `EFAULT` for a short period after USB to serial device is connected.
-- Comiling for hybrid mode doesn't exhibit this behaviour.
+- Compiling for hybrid mode doesn't exhibit this behaviour.
 
 ## Method
 - Use `build` to create a hybrid build (`test_hy`) and a purecap build (`test_pc`).
@@ -119,5 +119,20 @@ FreeBSD cheribsd.local 14.0-CURRENT FreeBSD 14.0-CURRENT #0 ugen-ep-copyincap-n2
 ```
 Effect observed: Yes
 
-### Default V Purecaps Kernel
-### Default V Hybrid Kernel
+### Default V22.12 Purecaps Kernel
+From Boot Menu: `6. kernel: kernel.GENERIC-MORELLO-PURECAP (4 of 5)`
+```
+root@cheribsd:~ # uname -a
+FreeBSD cheribsd.local 14.0-CURRENT FreeBSD 14.0-CURRENT #0 8993e1c3bba: Thu Dec 15 23:39:13 UTC 2022     jenkins@ctsrd-build-linux-xx:/local/scratch/jenkins/workspace/CheriBSD-pipeline_releng_22.12/cheribsd-morello-purecap-build/local/scratch/jenkins/workspace/CheriBSD-pipeline_releng_22.12/cheribsd/arm64.aarch64c/sys/GENERIC-MORELLO-PURECAP arm64
+root@cheribsd:~ #
+```
+Effect observed: Yes
+
+### Default V22.12 Hybrid Kernel
+From Boot Menu: `6. kernel: default/kernel (1 of 5)`
+```
+root@cheribsd:~ # uname -a
+FreeBSD cheribsd.local 14.0-CURRENT FreeBSD 14.0-CURRENT #0 8993e1c3bba: Thu Dec 15 23:25:54 UTC 2022     jenkins@ctsrd-build-linux-xx:/local/scratch/jenkins/workspace/CheriBSD-pipeline_releng_22.12/cheribsd-morello-purecap-build/local/scratch/jenkins/workspace/CheriBSD-pipeline_releng_22.12/cheribsd/arm64.aarch64c/sys/GENERIC-MORELLO arm64
+root@cheribsd:~ #
+```
+Effect observed: Yes
