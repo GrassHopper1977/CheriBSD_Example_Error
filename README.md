@@ -24,7 +24,7 @@ p.s. Apologies for misspelling the name of the OS in the title of the project.
 ## Method
 - Use `build` to create a hybrid build (`test_hy`) and a purecap build (`test_pc`).
 - Plug in a USB to Serial device that is connected to a serial data source (in our example a GNSS device).
-- Execute `.\test_hy`. It take a couple of attempts to align with the end of lines but then it will begin to display the NMEA sentances. We can ignore the EAGAIN error as that is just there because our code is non-blocking and `The file was marked for	non-blocking I/O, and no data were ready to be read.`:
+- Execute `.\test_hy`. It take a couple of attempts to align with the end of lines but then it will begin to display the NMEA sentances. We can ignore the `EAGAIN` error as that is just there because our code is non-blocking and `The file was marked for non-blocking I/O, and no data were ready to be read.`:
 ```
 root@cheribsd:~/github/CherryBSD_USB_Serial_Issue # ./test_hy
 Opening port /dev/ttyU0
