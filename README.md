@@ -8,14 +8,18 @@ p.s. Apologies for misspelling the name of the OS in the title of the project.
 - [x] Build minimum code showing the behavior
 - [x] Write a method to follow to test behaviour
 - [x] Verify bahavior on differnt kernels
-- [ ] Check if the potential bug has already been reported.
-- [ ] Complete the detailed description of the issue
-- [ ] Post on Slack and see if anyone else has been this bahvior
-- [ ] Raise a ticket
+- [x] Check if the potential bug has already been reported.
+- [x] Complete the detailed description of the issue
+- [x] Post on Slack and see if anyone else has been this bahvior
+- [ ] Raise a ticket (if needed)
 
 ## Description
-- On serial code compiled for purecap mode and run on purecap kernel: `read()` returns `EFAULT` for a short period after USB to serial device is connected.
-- Compiling for hybrid mode doesn't exhibit this behaviour.
+- On serial code compiled for purecap mode: `read()` always returns `EFAULT` if you run your code within a short period of time after USB to serial device is connected.
+- The code will never recover once this state has been entered. kqueue will report that there are bytes to read but every attempt to read will result in the same error.
+- Stop the code and the re-run it and the problem isn't there.
+- Wait 10 seconds after plugging the USB to serial device in and the problem isn't there.
+- Compiling for hybrid mode doesn't exhibit this behaviour either.
+- Problem appears to be independent of which kernel we are using.
 
 ## Method
 - Use `build` to create a hybrid build (`test_hy`) and a purecap build (`test_pc`).
@@ -136,3 +140,6 @@ FreeBSD cheribsd.local 14.0-CURRENT FreeBSD 14.0-CURRENT #0 8993e1c3bba: Thu Dec
 root@cheribsd:~ #
 ```
 Effect observed: Yes
+
+## Check if the potential bug has already been reported.
+Not that we could see. There were 5 issues that mention `serial` and  7 that mention `usb`. None of them seemed applicable to our case.
