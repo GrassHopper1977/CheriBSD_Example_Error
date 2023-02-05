@@ -21,6 +21,8 @@ p.s. Apologies for misspelling the name of the OS in the title of the project.
 - Compiling for hybrid mode doesn't exhibit this behaviour either.
 - Problem appears to be independent of which kernel we are using.
 
+Note: Our USB to Serial device is connected through a USB hub for these tests. When we unplug we are unplugging it from the hub and not directly into the Morello Cheri device.
+
 ## Method
 - Use `build` to create a hybrid build (`test_hy`) and a purecap build (`test_pc`).
 - Plug in a USB to Serial device that is connected to a serial data source (in our example a GNSS device).
