@@ -1,5 +1,7 @@
-# CherryBSD_USB_Serial_Issue
+# CheriBSD_USB_Serial_Issue
 We think we've foiund an issue with reading from USB to Serial devices. This is just for us to test out where the error lies and keep it documented as we do.
+
+p.s. Apologies for misspelling the name of the OS in the title of the project.
 
 ## Steps To Verify
 - [x] Write basic description
