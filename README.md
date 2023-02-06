@@ -1,7 +1,7 @@
 # CheriBSD_USB_Serial_Issue
-We think we've foiund an issue with reading from USB to Serial devices. This is just for us to test out where the error lies and keep it documented as we do.
+We thought that we'd found an error with the `read` when used with USB to Serial devices but inactual fact we'd found a good example of the power of Cheri to protect us from faults caused by simple typos. Mistakes that are easy to make but can be difficult to spot. We're keeping this repository as an example, as we think it helps to show a real world example of a Cheri fixing a bug.
 
-p.s. Apologies for misspelling the name of the OS in the title of the project.
+p.s. Apologies for misspelling the name of the OS in the title of the project. We will rename it at some stage.
 
 ## Steps To Verify
 - [x] Write basic description
@@ -11,8 +11,11 @@ p.s. Apologies for misspelling the name of the OS in the title of the project.
 - [x] Check if the potential bug has already been reported.
 - [x] Complete the detailed description of the issue
 - [x] Post on Slack and see if anyone else has been this bahvior
-- [ ] Raise a ticket (if needed)
+- [X] Read Salck reply showing our obvious mistake and feel a bit embarrassed
+- [ ] Turn this repo into an example of the power of Cheri to catch and warn us of our errors.
 
+# Original "Susepcted Bug"
+The code used in this example is in [test.c](test.c)
 ## Description
 - On serial code compiled for purecap mode: `read()` always returns `EFAULT` if you run your code within a short period of time after USB to serial device is connected.
 - The code will never recover once this state has been entered. kqueue will report that there are bytes to read but every attempt to read will result in the same error.
@@ -145,3 +148,140 @@ Effect observed: Yes
 
 ## Check if the potential bug has already been reported.
 Not that we could see. There were 5 issues that mention `serial` and  7 that mention `usb`. None of them seemed applicable to our case.
+
+## Asking on Slack if anymone has seen this behaviour
+It seems that we messed up our code. There is a typo (and also a dangerous assumption).
+
+# Fixing Our Issue
+## First we need to find our issue. there are two main problems here:
+### 1. A Typo
+`buffer - pbuffer` is the wrong way around as pbuffer is going to be the larger to the two. Therefore, we are not correctly calculating the number of bytes left in our buffer and instead of passing a gradually reducing number we are passing a gradually increasing number. Cheri picks this up because Capabilities have a pointer and infromation to range check the area that you are allowed to write to. The OS is checking and realising that we will be writing outside of our valid range and is correctly returning `EFAULT`.
+The erroneous code is [here in line 55](test.c#L55):
+```c
+  while((nbytes = read(fd, pbuffer, sizeof(buffer) - (buffer - pbuffer) - 1)) > 0)
+  {
+    pbuffer += nbytes;
+    //printf("We read %i bytes this time.\n", nbytes);
+    if((pbuffer[-1] == '\n') || (pbuffer[-1] == '\r'))
+    {
+      *pbuffer = '\0';
+      //printf("pbuffer[-2] = 0x%02x\n", pbuffer[-2]);
+      //printf("pbuffer[-1] = 0x%02x\n", pbuffer[-1]);
+      //printf("pbuffer[0] = 0x%02x\n", pbuffer[0]);
+      //printf("buffer: %.*s\n", (int)strnlen(buffer, sizeof(buffer) - 1), buffer);
+      if(strnlen(buffer, sizeof(buffer) - 1) > 1)
+      {
+        //printf("buffer: %s\n", buffer);
+        size = strnlen(buffer, sizeof(buffer) - 1);
+        printf("buffer: %.*s\n", (int)size, buffer);
+        //nmea_parse(buffer, size);
+      }
+      pbuffer = buffer;  // Reset line pointer
+      //break;
+    }
+  }
+```
+### 2. A Danegrous Assumption
+We assume that a message will not arrive that is larger than our buffer. We are reading from a GNSS device here and are assuming that the NMEA protocol has been followed byte it is possible that there may be devices that emit data that is longer than the maximum line length in teh spec. In this case we can change the code to check for the buffer being full and discard message that are too long.
+In this case the error is that check `if(nbytes == 0)`:
+```c
+  if(nbytes == 0)
+  {
+    printf("Waste! nbytes = %i\n", nbytes);
+  }
+  else
+  {
+    printf("Read error! nbytes = %i errno = %i (", nbytes, errno);
+```
+The problem is that we don't check why we read no bytes. It's possible that there were no bytes to read but also possible that the buffer was full.
+## Fixing the Issues
+Fixing the issues is fairly trivial. We fix the erroreous pointer algebra (or, better yet, don't use pointer algebra). We also check if the buffer is full and discard the bytes if the line is going to be too long. The fix is shown in [test_fix.c](test_fix.c).
+```c
+// Process the serial data here
+size_t processSerial(int fd)
+{
+  static char buffer[BUFFER_SIZE]; // input buffer
+  static char *pbuffer = buffer;  // current place in buffer
+  int nbytes = 0;  // bytes read so far
+  size_t size = 0;
+
+  while((nbytes = read(fd, pbuffer, sizeof(buffer) - (pbuffer - buffer) - 1)) > 0)
+  {
+    pbuffer += nbytes;
+    //printf("We read %i bytes this time.\n", nbytes);
+    if((pbuffer[-1] == '\n') || (pbuffer[-1] == '\r'))
+    {
+      *pbuffer = '\0';
+      //printf("pbuffer[-2] = 0x%02x\n", pbuffer[-2]);
+      //printf("pbuffer[-1] = 0x%02x\n", pbuffer[-1]);
+      //printf("pbuffer[0] = 0x%02x\n", pbuffer[0]);
+      //printf("buffer: %.*s\n", (int)strnlen(buffer, sizeof(buffer) - 1), buffer);
+      if(strnlen(buffer, sizeof(buffer) - 1) > 1)
+      {
+        //printf("buffer: %s\n", buffer);
+        size = strnlen(buffer, sizeof(buffer) - 1);
+        printf("buffer: %.*s\n", (int)size, buffer);
+        //nmea_parse(buffer, size);
+      }
+      pbuffer = buffer;  // Reset line pointer
+      //break;
+    }
+  }
+  if(nbytes == 0)
+  {
+    if((pbuffer - buffer) >= sizeof(buffer) - 1) {
+      //printf("ERROR! Line too long! Discarding %li bytes of data.\n", pbuffer - buffer);
+      pbuffer = buffer; // Discard the excess bytes here.
+    } else {
+      printf("Waste! nbytes = %i\n", nbytes);
+    }
+  }
+  else
+  {
+    printf("Read error! nbytes = %i errno = %i (", nbytes, errno);
+    switch(errno) {
+      case EBADF:
+        printf("EBADF");
+        break;
+      case ECONNRESET:
+        printf("ECONNRESET");
+        break;
+      case EFAULT:
+        printf("EFAULT");
+        break;
+      case EIO:
+        printf("EIO");
+        break;
+      case EINTEGRITY:
+        printf("EINTEGRITY");
+        break;
+      case EBUSY:
+        printf("EBUSY");
+        break;
+      case EINTR:
+        printf("EINTR");
+        break;
+      case EINVAL:
+        printf("EINVAL");
+        break;
+      case EAGAIN:
+        printf("EAGAIN or EWOULDBLOCK");
+        break;
+      case EISDIR:
+        printf("EISDIR");
+        break;
+      case EOPNOTSUPP:
+        printf("EOPNOTSUPP");
+        break;
+      case EOVERFLOW:
+        printf("EOVERFLOW");
+        break;
+      default:
+        printf("unknown %i", nbytes);
+        break;
+    }
+    printf(")\n");
+  }
+  return size;
+}
+```
