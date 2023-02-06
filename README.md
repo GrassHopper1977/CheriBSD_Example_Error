@@ -1,4 +1,4 @@
-# CheriBSD_USB_Serial_Issue
+# CheriBSD Example Error
 We thought that we'd found an error with the `read` when used with USB to Serial devices but inactual fact we'd found a good example of the power of Cheri to protect us from faults caused by simple typos. Mistakes that are easy to make but can be difficult to spot. We're keeping this repository as an example, as we think it helps to show a real world example of a Cheri fixing a bug.
 
 p.s. Apologies for misspelling the name of the OS in the title of the project. We will rename it at some stage.
@@ -11,8 +11,8 @@ p.s. Apologies for misspelling the name of the OS in the title of the project. W
 - [x] Check if the potential bug has already been reported.
 - [x] Complete the detailed description of the issue
 - [x] Post on Slack and see if anyone else has been this bahvior
-- [X] Read Salck reply showing our obvious mistake and feel a bit embarrassed
-- [ ] Turn this repo into an example of the power of Cheri to catch and warn us of our errors.
+- [X] Read Slack reply showing our obvious mistake and feel a bit embarrassed
+- [X] Turn this repo into an example of the power of Cheri to catch and warn us of our errors.
 
 # Original "Susepcted Bug"
 The code used in this example is in [test.c](test.c)
