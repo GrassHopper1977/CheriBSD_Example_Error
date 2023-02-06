@@ -1,0 +1,2 @@
+cc -g -O2 -Wall -mabi=purecap -cheri-bounds=subobject-safe -o test_fix_pc test_fix.c
+cc -g -O2 -Wall -mabi=aapcs -cheri-bounds=subobject-safe -o test_fix_hy test_fix.c
