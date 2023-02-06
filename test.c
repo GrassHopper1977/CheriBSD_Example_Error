@@ -23,11 +23,12 @@
 #endif
 
 #define MAX_EVENTS	(32)
+#define BUFFER_SIZE	(255)
 
 // Process the serial data here
 size_t processSerial(int fd)
 {
-  static char buffer[255]; // input buffer
+  static char buffer[BUFFER_SIZE]; // input buffer
   static char *pbuffer = buffer;  // current place in buffer
   int nbytes = 0;  // bytes read so far
   size_t size = 0;
