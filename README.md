@@ -14,7 +14,7 @@ p.s. Apologies for misspelling the name of the OS in the title of the project. W
 - [X] Read Slack reply showing our obvious mistake and feel a bit embarrassed
 - [X] Turn this repo into an example of the power of Cheri to catch and warn us of our errors.
 
-# Original "Susepcted Bug"
+# Original "Suspected Bug"
 The code used in this example is in [test.c](test.c)
 ## Description
 - On serial code compiled for purecap mode: `read()` always returns `EFAULT` if you run your code within a short period of time after USB to serial device is connected.
