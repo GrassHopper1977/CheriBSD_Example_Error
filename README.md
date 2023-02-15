@@ -1,8 +1,6 @@
 # CheriBSD Example Error
 We thought that we'd found an error with the `read` when used with USB to Serial devices but inactual fact we'd found a good example of the power of Cheri to protect us from faults caused by simple typos. Mistakes that are easy to make but can be difficult to spot. We're keeping this repository as an example, as we think it helps to show a real world example of a Cheri fixing a bug.
 
-p.s. Apologies for misspelling the name of the OS in the title of the project. We will rename it at some stage.
-
 ## Steps To Verify
 - [x] Write basic description
 - [x] Build minimum code showing the behavior
