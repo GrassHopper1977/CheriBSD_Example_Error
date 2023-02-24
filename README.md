@@ -283,3 +283,5 @@ size_t processSerial(int fd)
   return size;
 }
 ```
+## A Better Solution
+A better solution might be to allocate memory as it's needed and teh free it after we've processed the serial data. We can do this because we know how many bytes of data are waiting for us. We would have to add code to check teh pointer retunred isn't null or that it's not too large, but that's a small price to pay for the additional security this might provide.
